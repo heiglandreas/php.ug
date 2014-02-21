@@ -136,6 +136,28 @@ section > div#map {
     color: rgb(64,64,64);
 }
 
+/**
+ Icons
+**/
+[class^="phpug-"], [class*=" phpug-"] {
+    speak: none;
+    font-style: normal;
+    font-weight: normal;
+    font-variant: normal;
+    text-transform: none;
+    line-height: 1;
+
+    /* Better Font Rendering =========== */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.phpug-hashtag:before {
+    content : "#";
+    font-weight: 700;
+    font-size: 1.2em;
+}
+
 @media(max-width: 979px){
     .fork-on-github{
         display:none;

@@ -129,27 +129,18 @@ var createPopup = function(data) {
                 + '</div>'
         ;
                 
-    var contact = '<a href="%url%" title="%value%" target="_blank">'
-                + '<i class="fa-%faicon% fa"></i>'
+    var contact = '<a href="%url%" title="%typecase%%value%" target="_blank">'
+                + '<i class="%faicon% fa"></i>'
                 + '</a>';
     var contacts = [];
 
 
     if (data.group.icalendar_url) {
-        contacts.push(contact.replace(/%type%/,'icalendar').replace(/%url%/,data.group.icalendar_url).replace(/%value%/,'iCal-File').replace(/%faicon%/,'calendar'));
-    }
-    icons = {
-        'twitter' : 'twitter',
-        'github' : 'github',
-        'mail'   : 'envelope',
-        'facebook' : 'facebook',
-        'meetup' : 'meetup',
-        'google-plus' : 'google-plus',
-        'bitbucket' : 'bitbucket'
+        contacts.push(contact.replace(/%type%/,'icalendar').replace(/%typecase%/, '').replace(/%url%/,data.group.icalendar_url).replace(/%value%/,'iCal-File').replace(/%faicon%/,'fa-calendar'));
     }
     for (i in data.contacts) {
         cont = data.contacts[i];
-        contacts.push(contact.replace(/%type%/,cont.type.toLowerCase()).replace(/%url%/,cont.url).replace(/%value%/,cont.name).replace(/%faicon%/,icons[cont.type.toLowerCase()]));
+        contacts.push(contact.replace(/%type%/,cont.type.toLowerCase()).replace(/%typecase%/,cont.type + ': ').replace(/%url%/,cont.url).replace(/%value%/,cont.name).replace(/%faicon%/,cont.cssclass));
     }
     if (data.edit) {
         var edit = '<a href="ug/edit/'+data.group.shortname +'" title="Edit"><i class="fa fa-edit"></i></a>';

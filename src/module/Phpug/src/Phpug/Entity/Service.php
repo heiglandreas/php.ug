@@ -72,6 +72,11 @@ class Service
     protected $baseurl;
 
     /**
+     * @ORM\Column(type="string")
+     */
+    protected $cssclass;
+
+    /**
      * @ORM\OneToMany(targetEntity="Service", mappedBy="service")
      * @var Groupcontact[]
      */
