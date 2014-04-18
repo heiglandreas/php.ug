@@ -86,6 +86,17 @@ return array(
 			                    ),
 			                ),
 			            ),
+                        'v1' => array(
+                            'type' => 'Segment',
+                            'options' => array(
+                                'route' => '/v1/:controller/:action[/:id]',
+                                'defaults' => array(
+                                    '__NAMESPACE__' => 'Phpug\Api\v1',
+                                    'controller'    => 'UsergroupController',
+                                    'action'        => 'nextEvent',
+                                ),
+                            ),
+                        ),
 			            
 			        ),
 			    ),
@@ -104,11 +115,14 @@ return array(
 						'default' => array(
 							'type' => 'Segment',
 							'options' => array(
-								'route' => '/[:action]',
+								'route' => '/[:controller]/[:action]',
 								'constraints'=> array(
                               		'action'     => '[a-zA-Z][a-zA-Z0-9_-]*',
 								),
-								'defaults' => array(),
+								'defaults' => array(
+                                    'controller' => 'IndexController',
+                                    'action' => 'index',
+                                ),
 							),
 						),
 						'imprint' => array(
@@ -147,6 +161,49 @@ return array(
 								),
 							),
 						),
+                        'edit' => array(
+                            'type' => 'Segment',
+                            'options' => array(
+                                'route' => '/edit/:id',
+                                'defaults' => array(
+                                    'action' => 'edit',
+                                    'controller' => 'UsergroupController',
+                                    '__NAMESPACE__' => 'Phpug\Controller',
+                                ),
+                            ),
+                        ),
+                        'promote' => array(
+                            'type' => 'Segment',
+                            'options' => array(
+                                'route' => '/promote',
+                                'defaults' => array(
+                                    'action' => 'promote',
+                                    'controller' => 'UsergroupController',
+                                    '__NAMESPACE__' => 'Phpug\Controller',
+                                ),
+                            ),
+                        ),
+                        'validate' => array(
+                            'type' => 'Segment',
+                            'options' => array(
+                                'route' => '/validate',
+                                'defaults' => array(
+                                    'action' => 'validate',
+                                    'controller' => 'UsergroupController',
+                                    '__NAMESPACE__' => 'Phpug\Controller',
+                                ),
+                            ),
+                        ),'thankyou' => array(
+                            'type' => 'Segment',
+                            'options' => array(
+                                'route' => '/thankyou',
+                                'defaults' => array(
+                                    'action' => 'thankYou',
+                                    'controller' => 'UsergroupController',
+                                    '__NAMESPACE__' => 'Phpug\Controller',
+                                ),
+                            ),
+                        ),
                         'tips' => array(
                             'type' => 'Literal',
                             'options' => array(
@@ -158,12 +215,44 @@ return array(
                         ),
 					),					
 				),
+                'subdomain' => array(
+                    'type' => 'Hostname',
+                    'options' => array(
+                        'route' => ':ugid.php.ug',
+                        'defaults' => array(
+                            'controller' => 'Phpug\Controller\IndexController',
+                            'action' => 'redirect',
+                        ),
+                    ),
+                ),
  			),
 		),
 		'service_manager' => array(
-				'factories' => array(
-						'translator' => 'Zend\I18n\Translator\TranslatorServiceFactory',
-				),
+            'factories' => array(
+                'translator' => 'Zend\I18n\Translator\TranslatorServiceFactory',
+                'acl'        => 'Phpug\Service\AclFactory',
+                'roleManager' => 'Phpug\Service\RoleManagerFactory',
+                'PromoteUsergroupForm' => 'Phpug\Service\PromoteUsergroupFormFactory',
+                'UsergroupFieldset'    => 'Phpug\Service\UsergroupFieldsetFactory',
+                'Phpug\Service\UsergroupMessage' => 'Phpug\Service\UsergroupMessageFactory',
+                'Phpug\Service\Transport' => 'Phpug\Service\TransportFactory',
+                'Phpug\Service\Geocoder' => 'Phpug\Service\GeocoderFactory',
+                'Phpug\Cache\Country'     => 'Phpug\Service\CountryCacheFactory',
+                'Phpug\Cache\CountryCode'     => 'Phpug\Service\CountryCodeCacheFactory',
+                'Phpug\Entity\Cache'  => 'Phpug\Service\CacheFactory',
+                'Phpug\Service\Logger'    => 'Phpug\Service\LoggerFactory',
+            ),
+            'invokables' => array(
+                'usersGroupAssertion' => 'Phpug\Acl\UsersGroupAssertion',
+                'contactsRow'   => 'Phpug\View\Helper\ContactsRow',
+                'Phpug\Service\Message' => 'Zend\Mail\Message',
+                'Zend\Mail\Transport' => 'Zend\Mail\Transport\File',
+            ),
+            'shared' => array(
+                'Phpug\Cache\Country' => false,
+                'Phpug\Cache\CountryCode' => false,
+                'Phpug\Entity\Cache'  => false,
+            ),
 		),
 		'translator' => array(
 				'locale' => 'en_US',
@@ -179,11 +268,20 @@ return array(
 			'invokables' => array(
 				'Phpug\Controller\IndexController' => 'Phpug\Controller\IndexController',
 				'Phpug\Controller\Map'   => '\Phpug\Controller\MapController',	
+                'Phpug\Controller\UsergroupController' => 'Phpug\Controller\UsergroupController',
 			    'Phpug\Api\Rest\ListtypeController' => 'Phpug\Api\Rest\ListtypeController',
 			    'Phpug\Api\Rest\Listtype' => '\Phpug\Api\Rest\ListtypeController',
 			    'Phpug\Api\Rest\Usergroup' => 'Phpug\Api\Rest\UsergroupController',
+			    'Phpug\Api\v1\Usergroup' => 'Phpug\Api\v1\UsergroupController',
 			),
 		),
+        'view_helpers'    => array(
+            'invokables' => array(
+                'showForm'      => 'Phpug\View\Helper\ShowForm',
+                'tbElement'     => 'Phpug\View\Helper\TBElement',
+                'contactsRow'   => 'Phpug\View\Helper\ContactsRow',
+            ),
+        ),
 		'view_manager' => array(
 				'display_not_found_reason' => true,
 				'display_exceptions'       => true,
@@ -199,6 +297,9 @@ return array(
 				'template_path_stack' => array(
 						__DIR__ . '/../view',
 				),
+                'strategies' => array(
+                    'ViewJsonStrategy',
+                ),
 		),
 		'doctrine' => array(
 	        'driver' => array(
@@ -213,5 +314,28 @@ return array(
 	                )
 	            )
 	        )
-		)
+		),
+    'php.ug.log' => array(
+        'debuglog' => array(
+            'location' => getcwd() . '/log/debug.log',
+            'handler'  => 'RotatingFile',
+            'maxFiles' => 7,
+            'level'    => 100,
+        )
+    ),
+        'phpug' => array(
+            'entity' => array(
+                'cache' => array(
+                    'country' => array(
+                        'cacheLifeTime' => 'P1M',
+                    ),
+                    'countrycode' => array(
+                        'cacheLifeTime' => 'P1M',
+                    ),
+                    'event' => array(
+                        'cacheLifeTime' => 'P1W',
+                    ),
+                ),
+            ),
+        ),
 );

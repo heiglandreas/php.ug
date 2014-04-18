@@ -32,10 +32,14 @@
 
 namespace Phpug;
 
-use Zend\Module\Manager,
-    Zend\EventManager\StaticEventManager,
-    Zend\Module\Consumer\AutoloaderProvider,
-	Zend\Mvc\ModuleRouteListener;
+use Phpug\View\Strategy\UnauthorizedStrategy;
+use Zend\Module\Manager;
+use Zend\Module\Consumer\AutoloaderProvider;
+use Zend\Mvc\ModuleRouteListener;
+use Zend\Mvc\MvcEvent;
+use Zend\View\HelperPluginManager;
+use Phpug\View\Strategy\JsonExceptionStrategy;
+
 
 /**
  * The Module-Provider
@@ -54,17 +58,55 @@ class Module
     
     public function onBootstrap($e)
     {
-    	$e->getApplication()->getServiceManager()->get('translator');
     	$eventManager        = $e->getApplication()->getEventManager();
     	$moduleRouteListener = new ModuleRouteListener();
     	$moduleRouteListener->attach($eventManager);
+
+        // Could also be put into a separate Module
+        // Config json enabled exceptionStrategy
+        $exceptionStrategy = new JsonExceptionStrategy();
+
+        $displayExceptions = false;
+
+        if (isset($config['view_manager']['display_exceptions'])) {
+            $displayExceptions = $config['view_manager']['display_exceptions'];
+        }
+
+        $exceptionStrategy->setDisplayExceptions($displayExceptions);
+        $exceptionStrategy->attach($e->getTarget()->getEventManager());
+
+        $authStrategy = new UnauthorizedStrategy('error/unauthorized.phtml');
+        $authStrategy->attach($e->getTarget()->getEventManager());
     }
     
     public function getConfig()
     {
     	return include __DIR__ . '/config/module.config.php';
     }
-    
+    public function getViewHelperConfig()
+    {
+        return array(
+            'factories' => array(
+                // This will overwrite the native navigation helper
+                'navigation' => function(HelperPluginManager $pm) {
+                        // Setup ACL:
+                        $acl = $pm->getServiceLocator()->get('acl');
+                        $role = $pm->getServiceLocator()->get('roleManager');
+                        $role->setUserToken($pm->getServiceLocator()->get('OrgHeiglHybridAuthToken'));
+
+                        // Get an instance of the proxy helper
+                        $navigation = $pm->get('Zend\View\Helper\Navigation');
+
+                        // Store ACL and role in the proxy helper:
+                        $navigation->setAcl($acl)
+                            ->setRole((string) $role);
+
+                        // Return the new navigation helper instance
+                        return $navigation;
+                    }
+            )
+        );
+    }
     public function getAutoloaderConfig()
     {
     	return array(

@@ -91,9 +91,24 @@ class ListtypeController extends AbstractRestfulController
         }
         
         $content['error'] = null;
-        $content['list']   = $types[0]->toArray(); 
-        foreach ($types[0]->getUSergroups() as $group) {
-            $content['groups'][] = $group->toArray();
+        $content['list']   = $types[0]->toArray();
+        $currentUser = $this->getServiceLocator()->get('OrgHeiglHybridAuthToken');
+        $acl = $this->getServiceLocator()->get('acl');
+        $role = $this->getServiceLocator()->get('roleManager')->setUserToken($currentUser);
+        foreach ($types[0]->getUsergroups() as $group) {
+            $currentGroup = $group->toArray();
+            $countryCache = $this->getServiceLocator()->get('Phpug\Cache\CountryCode');
+            $countryCache->setUserGroup($group);
+            unset($currentGroup['caches']);
+            $currentGroup['country'] = $countryCache->getCache()->getCache();
+            if (Usergroup::ACTIVE == $group->getState()) {
+                $content['groups'][] = $currentGroup;
+                continue;
+            }
+            if ($acl && $acl->isAllowed((string) $role, 'ug', 'edit')) {
+                $content['groups'][] = $currentGroup;
+                continue;
+            }
         }
         $response->setContent($adapter->serialize($content));
         return $response;   

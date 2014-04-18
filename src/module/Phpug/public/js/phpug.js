@@ -47,6 +47,15 @@ var map = L.map('map',{
     layers: baseTile
 });
 
+
+var RedIcon = L.Icon.Default.extend({
+    options: {
+        iconUrl: 'img/phpug/marker-icon-orange.png'
+    }
+});
+
+var redIcon = new RedIcon();
+
 var createSelector = function(data){
     for (i in data) {
         item = data[i];
@@ -67,7 +76,6 @@ var loadGroupData = function(id){
         'success' : function(data){
             data = transformToGeoJson(data);
             if ('undefined' != typeof pointsLayer) {
-                console.log('removing old layer');
                 map.removeLayer(pointsLayer)
             }
             var geojsonMarkerOptions = {
@@ -79,9 +87,14 @@ var loadGroupData = function(id){
                     fillOpacity: 0.5
             };
             pointsLayer = L.geoJson(data, {
-//                pointToLayer: function (feature, latlng) {
-//                    return L.circleMarker(latlng, geojsonMarkerOptions)
-//                },
+                pointToLayer: function (feature, latlng) {
+                    icon = {};
+                    if (! feature.properties.active) {
+                        icon = {icon : redIcon};
+                    }
+                    $.extend(icon, geojsonMarkerOptions);
+                    return L.marker(latlng, icon)
+                },
                 onEachFeature: function (feature, pointsLayer) {
                     pointsLayer.on('click',openPopup);
                 }
@@ -91,7 +104,6 @@ var loadGroupData = function(id){
 };
 
 var openPopup = function(marker, foo){
-    console.log(marker);
     $.ajax({
         type: 'GET',
         url: "/api/rest/usergroup.json/" + marker.target.feature.properties.id,
@@ -101,30 +113,47 @@ var openPopup = function(marker, foo){
 };
 
 var createPopup = function(data) {
-    console.log(data);
-    var popup = new L.Popup({offset:new L.Point(0, -20)});
+    var popup = new L.Popup({offset:new L.Point(0, -20), minWidth : 150, maxWidth: 300});
     latlng = new L.LatLng(data.group.latitude,data.group.longitude);
     popup.setLatLng(latlng);
     var content = '<div class="popup">'
-                + '<h1>'
+                + '<h4>'
                 + '<a href="%url%" target="_blank">'
                 + '%name%'
                 + '</a>'
-                + '</h1>'
+                + '</h4>'
+                + '<h5>Next Event</h5>'
+                + '<div id="next_event_%shortname%" class="next_event">Getting next event...</div>'
+                + '<h5>Get in touch</h5>'
                 + '%contacts%'
-                + '</div>';
+                + '</div>'
+        ;
                 
-    var contact = '<a class="%type%" href="%url%" target="_blank">'
-                + '%value%'
+    var contact = '<a href="%url%" title="%value%" target="_blank">'
+                + '<i class="fa-%faicon% fa"></i>'
                 + '</a>';
     var contacts = [];
-    
+
+
     if (data.group.icalendar_url) {
-        contacts.push(contact.replace(/%type%/,'icalendar').replace(/%url%/,data.group.icalendar_url).replace(/%value%/,'iCal-File'));
+        contacts.push(contact.replace(/%type%/,'icalendar').replace(/%url%/,data.group.icalendar_url).replace(/%value%/,'iCal-File').replace(/%faicon%/,'calendar'));
+    }
+    icons = {
+        'twitter' : 'twitter',
+        'github' : 'github',
+        'mail'   : 'envelope',
+        'facebook' : 'facebook',
+        'meetup' : 'meetup',
+        'google-plus' : 'google-plus',
+        'bitbucket' : 'bitbucket'
     }
     for (i in data.contacts) {
         cont = data.contacts[i];
-        contacts.push(contact.replace(/%type%/,cont.type.toLowerCase()).replace(/%url%/,cont.url).replace(/%value%/,cont.name));
+        contacts.push(contact.replace(/%type%/,cont.type.toLowerCase()).replace(/%url%/,cont.url).replace(/%value%/,cont.name).replace(/%faicon%/,icons[cont.type.toLowerCase()]));
+    }
+    if (data.edit) {
+        var edit = '<a href="ug/edit/'+data.group.shortname +'" title="Edit"><i class="fa fa-edit"></i></a>';
+        contacts.push(edit);
     }
     contacts = contacts.join('</li><li>');
     if (contacts) {
@@ -132,10 +161,43 @@ var createPopup = function(data) {
     }
     content = content.replace(/%url%/,data.group.url)
            .replace(/%name%/,data.group.name)
+           .replace(/%shortname%/,data.group.shortname)
            .replace(/%contacts%/, contacts);
     popup.setContent(content);
-    map.openPopup(popup);
+    map.openPopup(popup, data.group.shortname);
+
+    pushNextMeeting(popup, data.group.shortname);
 };
+
+var pushNextMeeting = function(popup, id)
+{
+    $.ajax({
+        type: 'POST',
+        url: "/api/v1/usergroup/next-event/" + id,
+        dataTpye: 'json',
+        context : {'id':id, 'popup':popup},
+        success : function(a){
+            var content='<h6><a href="%url%">%title%</a></h6><dl title="%description%"><dt>Starts</dt><dd>%startdate%</dd><dt>Ends</dt><dd>%enddate%</dd><dt>Location:</dt><dd>%location%</dd></dl>';
+            content = content.replace(/%url%/g, a.url)
+                .replace(/%title%/g, a.summary)
+                .replace(/%startdate%/g, a.start)
+                .replace(/%enddate%/g, a.end)
+                .replace(/%description%/g, a.description)
+                .replace(/%location%/g, a.location)
+            ;
+            $('#next_event_' + this.id).html(content);
+            var newContent = $('#next_event_' + this.id).closest('.popup').html();
+            this.popup.setContent(newContent);
+            this.popup.update();
+        },
+        error : function(a){
+            $('#next_event_' + this.id).html('Could not retrieve an event.');
+            var newContent = $('#next_event_' + this.id).parent('.popup').html();
+            this.popup.setContent(newContent);
+            this.popup.update();
+        }
+    })
+}
 
 var transformToGeoJson = function(data)
 {
@@ -143,7 +205,6 @@ var transformToGeoJson = function(data)
             type : data.list.name,
             features : []
     };
-    console.log(data);
     for (i in data.groups) {
         var point = data.groups[i];
         var feature = {
@@ -155,7 +216,8 @@ var transformToGeoJson = function(data)
             properties : {
                 'name' : point.name,
                 'url' : point.url,
-                'id' : point.id
+                'id' : point.id,
+                'active' : point.state===1?true:false
             }
         };
         jsonGeo.features.push(feature);

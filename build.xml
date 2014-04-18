@@ -36,65 +36,21 @@
 -->
 <project name="php.ug" default="build" basedir=".">
 
-    <!-- This target deletes all temporary files from the directory -->
-    <target name="clean">
-        <delete includeemptydirs="true">
-            <fileset dir="${basedir}/build">
-                <include name="**/*" />
-            </fileset>
-        </delete>
+    <target name="update">
+        <echo message="Updating composer-binary"/>
+        <exec command="composer self-update"/>
+        <echo message="Updating Requirements"/>
+        <exec command="composer update" />
     </target>
-
-    <target name="build"
-              depends="sniff, clean, test, api, manual, distribute" />
 
     <target name="test">
-        <mkdir dir="${basedir}/build/Phpug/logs"/>
-        <mkdir dir="${basedir}/build/Phpug/phpunit"/>
-        <mkdir dir="${basedir}/build/Phpug/coverage"/>
-        <delete includeemptydirs="true" verbose="false">
-            <fileset dir="${basedir}/build/phpunit/coverage">
-                <include name="**/*" />
-            </fileset>
-        </delete>
-        <exec executable="phpunit" dir="${basedir}/src/module/Phpug" failonerror="on"/>
-        <exec executable="${basedir}/tools/removeBasePath" dir="${basedir}/build/Phpug/coverage" failonerror="true">
-        	<arg path="${basedir}/src/" />
-        </exec>
-    </target>
-
-    <target name="api">
-        <mkdir dir="${basedir}/build/api"/>
-        <exec executable="docblox" dir="${basedir}" failonerror="on"/>
-    </target>
-    
-    <target name="distribute">
-    </target>
-
-    <target name="manual">
-        <mkdir dir="${basedir}/build/doc"/>
-        <delete includeemptydirs="true" verbose="true">
-            <fileset dir="${basedir}/build/doc">
-                <include name="**/*" />
-            </fileset>
-        </delete>
-        <exec executable="xsltproc" dir="${basedir}">
-            <arg line="--output build/doc/index.html doc/php.ug.xsl doc/main.xml "/>
-        </exec>
-        <copy todir="${basedir}/build/doc/">
-            <fileset dir="${basedir}/doc/inc/"/>
-        </copy>
-    </target>
-    
-    <!--
-    Check the code using phpcs using the heigl.org-Standard
-    -->
-    <target name="sniff">
-        <exec executable="phpcs" dir="${basedir}/src" failonerror="true">
-            <arg value="--standard=HeiglOrg"/>
-            <arg value="-n"/>
-            <arg value="-p"/>
-        	<arg value="."/>
-        </exec>
+        <phpunit configuration="phpunit.xml.dist">
+            <formatter type = "plain" usefile = "false"/>
+            <batchtest>
+                <fileset dir = "src/module/Phpug/tests">
+                    <include name = "**/*Test*.php"/>
+                </fileset>
+            </batchtest>
+        </phpunit>
     </target>
 </project>
