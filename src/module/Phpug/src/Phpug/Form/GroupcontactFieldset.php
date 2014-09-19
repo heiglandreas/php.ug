@@ -103,6 +103,14 @@ class GroupcontactFieldset extends Fieldset implements InputFilterProviderInterf
                 'properties' => array(
                     'required' => true,
                 ),
+                'filters' => array(
+                    array(
+                        'name' => 'Zend\Filter\PregReplace',
+                        'options' => array(
+                            'pattern' => '/http[s]?:\/\/([^\.]+\.)?twitter\.com\/@?/',
+                        ),
+                    ),
+                ),
             ),
             'service' => array(
                 'required' => true,

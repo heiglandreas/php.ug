@@ -13,7 +13,7 @@ use Zend\Validator\AbstractValidator;
 
 class SocialMediaAccountExists extends AbstractValidator
 {
-    const THAT = 'that';
+    const URL_PROVIDED = 'url_provided';
     /**
      * Digits filter used for validation
      *
@@ -27,7 +27,7 @@ class SocialMediaAccountExists extends AbstractValidator
      * @var array
      */
     protected $messageTemplates = array(
-        self::THAT   => "that error message",
+        self::URL_PROVIDED   => "Please provide the username and not the full ID",
     );
 
     /**
