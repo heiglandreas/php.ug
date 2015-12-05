@@ -56,7 +56,7 @@ class CountryCode implements CachePopulatorInterface
                 $usergroup->getLatitude(),
                 $usergroup->getLongitude()
             );
-            return $geocode->getCountryCode();
+            return strtoupper($geocode->getCountry());
         } catch(\Exception $e)
         {
             //

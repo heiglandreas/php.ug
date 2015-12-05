@@ -535,16 +535,17 @@ return array(
         'entity' => array(
             'cache' => array(
                 'country' => array(
-                    'cacheLifeTime' => 'P1M',
+                    'cacheLifeTime' => 'P6M',
                 ),
                 'countrycode' => array(
-                    'cacheLifeTime' => 'P1M',
+                    'cacheLifeTime' => 'P6M',
                 ),
                 'event' => array(
                     'cacheLifeTime' => 'P1W',
                 ),
             ),
         ),
+        'mapquest_api_token' => '',
     ),
     'asset_manager' => array(
         'resolver_configs' => array(

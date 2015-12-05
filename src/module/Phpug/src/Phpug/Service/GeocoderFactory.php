@@ -31,6 +31,7 @@
 
 namespace Phpug\Service;
 
+use Geocoder\Provider\MapQuestProvider;
 use Zend\Form\Factory;
 use Zend\ServiceManager\FactoryInterface;
 use Zend\ServiceManager\ServiceLocatorInterface;
@@ -55,10 +56,15 @@ class GeocoderFactory implements  FactoryInterface
         $geocoder = new \Geocoder\Geocoder();
         $adapter  = new \Geocoder\HttpAdapter\CurlHttpAdapter(null, null, 'PHP.ug country-locator - info@php.ug');
 
+        $config = $createService->get('config');
+        if ($config instanceof Traversable) {
+            $config = ArrayUtils::iteratorToArray($config);
+        }
+
         $geocoder->registerProviders(array(
-            new \Geocoder\Provider\NominatimProvider(
-                $adapter, 'http://nominatim.openstreetmap.org', $locale
-            )
+            new MapQuestProvider(
+                $adapter, $config['phpug']['mapquest_api_token'], $locale
+            ),
         ));
 
         return $geocoder;
